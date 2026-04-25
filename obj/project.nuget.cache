@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "y0j/vpkyyro=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\segan\\Tyuiu.Hits.Blazor.Todo.LozhkinBogdan\\Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\segan\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.5\\microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512"
+  ],
+  "logs": []
+}
