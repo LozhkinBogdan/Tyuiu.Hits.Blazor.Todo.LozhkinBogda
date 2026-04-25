@@ -1,0 +1,75 @@
+@page "/supplies"
+@rendermode InteractiveServer
+@using Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Models
+@using Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Services
+@inject InventoryService InventoryService
+
+<h3> Поставки</h3>
+
+<h4>Добавить поставку</h4>
+
+<select @bind="selectedProductId">
+    <option value="0">-- Выберите товар --</option>
+    @foreach (var p in products)
+    {
+        <option value="@p.Id">@p.Name</option>
+    }
+</select>
+
+<input type="number" @bind="quantity" />
+
+<button @onclick="AddSupply" disabled="@(!CanAdd)">
+    Добавить
+</button>
+
+<hr />
+
+<h4>История поставок</h4>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Товар</th>
+            <th>Количество</th>
+            <th>Дата</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var s in InventoryService.GetSupplies())
+        {
+            var product = products.FirstOrDefault(p => p.Id == s.ProductId);
+
+            <tr>
+                <td>@product?.Name</td>
+                <td>@s.Quantity</td>
+                <td>@s.Date.ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Product> products = new();
+
+    private int selectedProductId;
+    private int quantity;
+
+    protected override void OnInitialized()
+    {
+        products = InventoryService.GetProducts();
+    }
+
+    private bool CanAdd =>
+        selectedProductId != 0 && quantity > 0;
+
+    private void AddSupply()
+    {
+        InventoryService.AddSupply(selectedProductId, quantity);
+
+        quantity = 0;
+        selectedProductId = 0;
+
+        products = InventoryService.GetProducts();
+    }
+}

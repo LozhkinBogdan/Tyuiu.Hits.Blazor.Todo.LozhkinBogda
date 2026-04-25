@@ -1,0 +1,26 @@
+@page "/notifications"
+@rendermode InteractiveServer
+@using Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Models
+@using Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Services
+@inject InventoryService InventoryService
+
+<h3> История уведомлений</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Сообщение</th>
+            <th>Дата</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var n in InventoryService.GetNotifications())
+        {
+            <tr>
+                <td>@n.Message</td>
+                <td>@n.Date.ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

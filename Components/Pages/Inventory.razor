@@ -1,0 +1,249 @@
+@page "/inventory"
+@rendermode InteractiveServer
+@using Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Models
+@using Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Services
+@inject Tyuiu.Hits.Blazor.Todo.LozhkinBogdan.Services.InventoryService InventoryService
+
+<h3>Система учета инвентаря</h3>
+
+@if (showToast)
+{
+    <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        z-index: 9999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    ">
+        @toastMessage
+    </div>
+}
+
+<hr />
+
+<h4> Добавить товар</h4>
+
+<input placeholder="Название"
+       @bind="newName"
+       @bind:event="oninput" />
+<InputNumber @bind-Value="newQuantity" />
+<InputNumber @bind-Value="newMinStock" />
+
+<button @onclick="AddProduct" disabled="@(!CanAddProduct)">
+    Добавить
+</button>
+
+<hr />
+
+<hr />
+
+
+<h4> Список товаров</h4>
+
+@if (editingId != 0)
+{
+    <div style="border:1px solid gray; padding:10px; margin-bottom:15px;">
+        <h4> Редактирование товара</h4>
+
+        <input @bind="editName" placeholder="Название" />
+        <input type="number" @bind="editQuantity" placeholder="Количество" />
+        <input type="number" @bind="editMinStock" placeholder="Мин. уровень" />
+
+        <br /><br />
+
+        <button @onclick="SaveEdit">Сохранить</button>
+        <button @onclick="CancelEdit">Отмена</button>
+    </div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Количество</th>
+            <th>Мин. уровень</th>
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var p in products)
+        {
+         <tr style="@(InventoryService.IsLowStock(p) ? "background-color:#ffcccc" : "")">
+                <td>@p.Name</td>
+                <td>@p.Quantity</td>
+                <td>@p.MinStockLevel</td>
+                <td>
+                    @if (InventoryService.IsLowStock(p))
+                    {
+                        <span style="color:red;">⚠ Низкий запас</span>
+                    }
+                    else
+                    {
+                        <span style="color:green;">OK</span>
+                    }
+                </td>
+                <td>
+    <button @onclick="() => RemoveProduct(p.Id)">
+        Удалить
+    </button>
+    <button @onclick="() => StartEdit(p)">
+     Редактировать
+</button>
+</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<h4> Списание товара</h4>
+
+<select @bind="writeOffProductId">
+    <option value="0">-- Выберите товар --</option>
+    @foreach (var p in products)
+    {
+        <option value="@p.Id">@p.Name</option>
+    }
+</select>
+
+<input type="number" placeholder="Количество" @bind="writeOffQuantity" />
+
+<button @onclick="WriteOff" disabled="@(!CanWriteOff)">
+    Списать
+</button>
+
+<hr />
+
+
+<button @onclick="SaveEdit" disabled="@(!CanSaveEdit)">
+    Сохранить
+</button>
+
+@code {
+    private string newName = "";
+    private int newQuantity;
+    private int newMinStock;
+
+    private int selectedProductId;
+
+    private int supplyQuantity;
+
+    private int editingId = 0;
+
+    private string editName = "";
+    private int editQuantity;
+    private int editMinStock;
+
+    private bool CanAddProduct =>
+        !string.IsNullOrWhiteSpace(newName) && newQuantity > 0;
+
+private bool CanAddSupply =>
+    selectedProductId != 0 && supplyQuantity > 0;
+
+    private List<Product> Products => InventoryService.GetProducts();
+
+
+
+
+
+   private void AddProduct()
+{
+    InventoryService.AddProduct(newName, newQuantity, newMinStock);
+
+    products = InventoryService.GetProducts();
+
+    newName = "";
+    newQuantity = 0;
+    newMinStock = 0;
+}
+
+    private void AddSupply()
+{
+    InventoryService.AddSupply(selectedProductId, supplyQuantity);
+
+    products = InventoryService.GetProducts();
+
+    selectedProductId = 0;
+    supplyQuantity = 0;
+}
+
+   private void RemoveProduct(int id)
+{
+    InventoryService.DeleteProduct(id);
+    products = InventoryService.GetProducts();
+}
+
+    private void StartEdit(Product p)
+    {
+        editingId = p.Id;
+        editName = p.Name;
+        editQuantity = p.Quantity;
+        editMinStock = p.MinStockLevel;
+    }
+
+    private void SaveEdit()
+{
+    InventoryService.UpdateProduct(editingId, editName, editQuantity, editMinStock);
+
+    products = InventoryService.GetProducts();
+    editingId = 0;
+}
+
+    private void CancelEdit()
+    {
+        editingId = 0;
+    }
+    private bool CanSaveEdit =>
+    !string.IsNullOrWhiteSpace(editName) && editQuantity > 0;
+    private List<Product> products = new();
+
+        protected override void OnInitialized()
+{
+    products = InventoryService.GetProducts();
+}
+private int writeOffProductId;
+private int writeOffQuantity;
+
+private bool CanWriteOff =>
+    writeOffProductId != 0 && writeOffQuantity > 0;
+
+private async void WriteOff()
+{
+    InventoryService.WriteOff(writeOffProductId, writeOffQuantity);
+
+    var product = products.FirstOrDefault(p => p.Id == writeOffProductId);
+
+    if (product != null && product.Quantity <= 3)
+    {
+        await ShowToast($"⚠ Внимание! {product.Name} заканчивается ({product.Quantity})");
+    }
+    else
+    {
+        await ShowToast("Списание выполнено");
+    }
+
+    writeOffProductId = 0;
+    writeOffQuantity = 0;
+
+    products = InventoryService.GetProducts();
+}
+private string? toastMessage;
+private bool showToast;
+
+private async Task ShowToast(string message)
+{
+    toastMessage = message;
+    showToast = true;
+
+    await InvokeAsync(StateHasChanged);
+
+    await Task.Delay(2500);
+
+    showToast = false;
+    await InvokeAsync(StateHasChanged);
+}
+}
